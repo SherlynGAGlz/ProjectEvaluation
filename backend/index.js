@@ -22,26 +22,23 @@ mongoose.connect(db.DATABASE,{ useNewUrlParser: true,useUnifiedTopology:true },f
 
 
 // adding new user (sign-up route)
-app.post('/api/register',function(req,res){
+app.post('/api/register'),async function(req,res){
+    if (req.body.password !== req.body.password2) return res.status(400).json({
+        message: "Passwords do not match" });
    // taking a user
    const newuser=new User(req.body);
-   console.log(newuser);
-
-   if(newuser.password!=newuser.password2)return res.status(400).json({message: "password not match"});
-   
-   User.findOne({email:newuser.email},function(err,user){
-       if(user) return res.status(400).json({ auth : false, message :"email exits"});
-
-       newuser.save((err,doc)=>{
-           if(err) {console.log(err);
-               return res.status(400).json({ success : false});}
-           res.status(200).json({
-               succes:true,
-               user : doc
-           });
-       });
-   });
-});
+   const user = await User.findOne({email:newuser.email});
+   if(user) return res.status(400).json({ auth : false, message :"email exits"});
+   try {
+    const user = await newuser.save();
+    return res.status(200).json({
+        success:true,
+        user : user
+    });
+   } catch (err) {
+    console.log(err);
+    return res.status(400).json({ success : false});
+   }
 
 
 // login user
